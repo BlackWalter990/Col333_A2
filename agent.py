@@ -558,6 +558,7 @@ class RandomAgent(BaseAgent):
 
 try:
     from student_agent import StudentAgent
+    from Monte_carlo import *
 except ImportError:
     print("Warning: student_agent.py not found. Creating placeholder StudentAgent.")
     
@@ -585,6 +586,7 @@ def get_agent(player: str, strategy: str) -> BaseAgent:
     
     if strategy == "random":
         return RandomAgent(player)
+        # return ManInBlack(player)
     elif strategy == "student":
         return StudentAgent(player)
     elif strategy == "student_cpp":

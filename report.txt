@@ -1,0 +1,8 @@
+Even though I/we have taken help from the following students and LLMs in terms of discussing ideas and coding practices, all my/our code is written by me/us.
+
+Name:
+Aryan Dangi (2022ME11483)
+Parth Singh (2022ME11438)
+
+LLMs used:
+ChatGPT : used to discuss the weights used for the board evaluation function, and Debugging.
