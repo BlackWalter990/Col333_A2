@@ -585,8 +585,8 @@ def get_agent(player: str, strategy: str) -> BaseAgent:
     strategy = strategy.lower()
     
     if strategy == "random":
-        return RandomAgent(player)
-        # return ManInBlack(player)
+        # return RandomAgent(player)
+        return ManInBlack(player)
     elif strategy == "student":
         return StudentAgent(player)
     elif strategy == "student_cpp":

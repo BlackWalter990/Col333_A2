@@ -310,8 +310,8 @@ def basic_evaluate_board(board, player, rows, cols, score_cols):
     W_SCORED         = 200.0    # scored stones dominate
     W_IMMINENT       = 150.0    # 1 step from scoring (in lane)
     W_HORIZ_INC      = 120.0    # horizontal incentive once at goal row
-    W_DIST           = 60.0     # vertical progress reward
-    W_LANE_CLEAR     = 16.0     # pristine vertical column to goal
+    W_DIST           = 28.0     # vertical progress reward
+    W_LANE_CLEAR     = 60.0    # pristine vertical column to goal
     W_BLOCK_ENEMY    = 120.0    # enemy stone blocking your lane
     W_BLOCK_SELF     = 80.0     # your own stone blocking your lane
     W_RIVER_SOFT     = 6.0      # any river in the lane (friction)
