@@ -1,0 +1,9 @@
+# River and Stones Game Dependencies
+# Python 3.8+ required
+
+# Core game dependencies
+pygame>=2.0.0
+
+# Data science and AI libraries (for advanced student implementations)
+numpy>=1.21.0
+scipy>=1.7.0
