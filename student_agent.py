@@ -167,27 +167,84 @@ def basic_evaluate_board(board: List[List[Any]], player: str, rows: int, cols: i
     Returns a score where higher values are better for the given player.
     Students can use this as a starting point and improve it.
     """
-    score = 0.0
+    # score = 0.0
+    # opponent = get_opponent(player)
+    
+    # # Count stones in scoring areas
+    # player_scoring_stones = count_stones_in_scoring_area(board, player, rows, cols, score_cols)
+    # opponent_scoring_stones = count_stones_in_scoring_area(board, opponent, rows, cols, score_cols)
+    
+    # score += player_scoring_stones * 100  
+    # score -= opponent_scoring_stones * 100  
+    
+    # # Count total pieces and positional factors
+    # for y in range(rows):
+    #     for x in range(cols):
+    #         piece = board[y][x]
+    #         if piece and piece.owner == player and piece.side == "stone":
+    #             # Basic positional scoring
+    #             if player == "circle":
+    #                 score += (rows - y) * 0.1
+    #             else:
+    #                 score += y * 0.1
+    
+    # return score
+
     opponent = get_opponent(player)
-    
-    # Count stones in scoring areas
-    player_scoring_stones = count_stones_in_scoring_area(board, player, rows, cols, score_cols)
-    opponent_scoring_stones = count_stones_in_scoring_area(board, opponent, rows, cols, score_cols)
-    
-    score += player_scoring_stones * 100  
-    score -= opponent_scoring_stones * 100  
-    
-    # Count total pieces and positional factors
+    score = 0.0
+
+    # === 1. Stones already scored ===
+    my_scored = count_stones_in_scoring_area(board, player, rows, cols, score_cols)
+    opp_scored = count_stones_in_scoring_area(board, opponent, rows, cols, score_cols)
+    score += my_scored * 100
+    score -= opp_scored * 100
+
+    # Target rows
+    my_goal_row = bottom_score_row(rows) if player == "square" else top_score_row()
+    opp_goal_row = bottom_score_row(rows) if opponent == "square" else top_score_row()
+
+    # === 2. Distance-to-goal + 3. Threats-in-one ===
     for y in range(rows):
         for x in range(cols):
             piece = board[y][x]
-            if piece and piece.owner == player and piece.side == "stone":
-                # Basic positional scoring
-                if player == "circle":
-                    score += (rows - y) * 0.1
-                else:
-                    score += y * 0.1
-    
+            if not piece:
+                continue
+
+            # My stones
+            if piece.owner == player and piece.side == "stone":
+                dist = abs(my_goal_row - y)
+                score += (rows - dist) * 2  # closer is better
+
+                # If can step into goal in one move
+                if dist == 1 and x in score_cols:
+                    score += 50
+
+            # Opponent stones
+            elif piece.owner == opponent and piece.side == "stone":
+                dist = abs(opp_goal_row - y)
+                score -= (rows - dist) * 2
+
+                if dist == 1 and x in score_cols:
+                    score -= 50
+
+            # === 4. Rivers ===
+            elif piece.side.startswith("river"):
+                # Reward rivers near my stones, penalize if near opponent
+                for dx, dy in [(1,0),(-1,0),(0,1),(0,-1)]:
+                    nx, ny = x + dx, y + dy
+                    if in_bounds(nx, ny, rows, cols):
+                        adj = board[ny][nx]
+                        if adj and adj.side == "stone":
+                            if adj.owner == player:
+                                score += 5
+                            else:
+                                score -= 5
+
+    # === 5. Mobility advantage ===
+    my_moves = len(generate_all_moves(board, player, rows, cols, score_cols))
+    opp_moves = len(generate_all_moves(board, opponent, rows, cols, score_cols))
+    score += (my_moves - opp_moves) * 0.5
+
     return score
 
 def simulate_move(board: List[List[Any]], move: Dict[str, Any], player: str, rows: int, cols: int, score_cols: List[int]) -> Tuple[bool, Any]:
@@ -279,27 +336,27 @@ class StudentAgent(BaseAgent):
             return None
         
         ##adaptive choice of depth
-        base_ms = 50  
+        base_ms = 1000
         if opponent_time < 3.0:
-            base_ms = 25  # opponent running out of time
+            base_ms = 500  # opponent running out of time
         elif current_player_time < 3.0:
-            base_ms = 20  # player running out of time
+            base_ms = 500  # player running out of time
         deadline = time.perf_counter() + base_ms/1000.0
-        depth = 2 if ( current_player_time < 3.0 or opponent_time < 3.0 ) else 3
+        depth = 10 if ( current_player_time < 3.0 or opponent_time < 3.0 ) else 12
 
 
         if current_player_time <=0: ## no time left
             return None
 
-        deadline = time.perf_counter() + 0.05 ## 50 ms
+        # deadline = time.perf_counter() + 0.05 ## 50 ms
 
 
         best_score = float('-inf')
         best_move = None
         
         for move in moves:
-            new_board = simulate_move(board,move,self.player,rows,cols,score_cols)
-            if not new_board :
+            ok, new_board = simulate_move(board,move,self.player,rows,cols,score_cols)
+            if not (new_board and ok) :
                 continue
             
             score = self.minimax(new_board,depth-1,alpha = float('-inf'),beta=float('inf'),maxim = False, to_move = self.opponent, rows= rows, cols = cols, score_cols = score_cols,deadline = deadline)
@@ -323,8 +380,8 @@ class StudentAgent(BaseAgent):
         if maxim:
             value = float('-inf')
             for move in moves:
-                new_board = simulate_move(board,move,to_move,rows,cols,score_cols)
-                if not new_board:
+                ok, new_board = simulate_move(board,move,to_move,rows,cols,score_cols)
+                if not (new_board and ok):
                     continue
                 child = self.minimax(new_board,depth-1,alpha,beta,False,get_opponent(to_move),rows,cols,score_cols,deadline)
                 value= max(value,child)
@@ -338,8 +395,8 @@ class StudentAgent(BaseAgent):
         else:
             value = float('inf')
             for move in moves:
-                new_board = simulate_move(board,move,to_move,rows,cols,score_cols)
-                if not new_board:
+                ok, new_board = simulate_move(board,move,to_move,rows,cols,score_cols)
+                if not (new_board and ok):
                     continue
                 child = self.minimax(new_board,depth-1,alpha,beta,True,get_opponent(to_move),rows,cols,score_cols,deadline)
                 value= min(value,child)
